@@ -2,10 +2,6 @@
 
 import os, sqlite3, re, subprocess
 
-class SQLiteDB:
-    def __init__(self, name):
-        self.name = name
-        os.s
 
 dirs_table_def=\
     '''
