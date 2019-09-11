@@ -1,6 +1,6 @@
 #!/bin/env python3
 
-import os, sqlite3, re, subprocess
+import os, sqlite3, re, subprocess, json
 
 dirs_table_def=\
     '''
@@ -55,6 +55,7 @@ if __name__ == "__main__":
             parent_inode=os.stat(root).st_ino
             cursor.execute('INSERT INTO dirs(inode, name, parent_inode) VALUES (?, ?, ?)', (inode, dir, parent_inode))
             connector.commit()
+    for root, dirs, files in os.walk('.'):        
         for file in files:
             if re.match(audio_regex,file):
                 is_audio = True
@@ -62,4 +63,10 @@ if __name__ == "__main__":
                 is_audio = False
             cursor.execute('INSERT INTO files (name, parent, is_audio) VALUES (?, ?, ?)', (file, parent_inode, is_audio))
             connector.commit()
+            if is_audio:
+                file_path=os.path.join(os.path.abspath(root),file)
+                ffprobe_command=['ffprobe', '-v', 'error', '-select_streams', 'a:0', '-show_format', '-show_streams', '-of', 'json=compact=1', file_path]
+                _subprocess=subprocess.run(ffprobe_command, capture_output=True)
+                metadata_json=_subprocess.stdout
+                print(metadata_json)
     pass
