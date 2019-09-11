@@ -2,7 +2,6 @@
 
 import os, sqlite3, re, subprocess
 
-
 dirs_table_def=\
     '''
     dirs
@@ -11,8 +10,7 @@ dirs_table_def=\
     parent_inode INT,
     FOREIGN KEY (parent_inode) references dirs(inode)
     )
-    '''
-    
+    '''  
 
 files_table_def=\
     '''
@@ -49,7 +47,7 @@ if __name__ == "__main__":
     cursor.execute('PRAGMA journal_mode = WAL;')
     cursor.execute('CREATE TABLE IF NOT EXISTS %s' % dirs_table_def)
     cursor.execute('CREATE TABLE IF NOT EXISTS %s' % files_table_def)
-    cursor.execute('INSERT INTO dirs (inode, name) VALUES (?, ?)',(os.stat('.').st_ino,'.'))
+    cursor.execute('INSERT INTO dirs (inode, name) VALUES (?, ?)',(os.stat('.').st_ino, '.'))
     audio_regex=re.compile('.*\.(flac|wa?v|m4a|mp[34]|ogg|wma)$', re.IGNORECASE)
     for root, dirs, files in os.walk('.'):
         for dir in dirs:
@@ -62,6 +60,6 @@ if __name__ == "__main__":
                 is_audio = True
             else:
                 is_audio = False
-            cursor.execute('INSERT INTO files (name, parent, is_audio) VALUES (?, ?, ?)', (file,parent_inode, is_audio))
+            cursor.execute('INSERT INTO files (name, parent, is_audio) VALUES (?, ?, ?)', (file, parent_inode, is_audio))
             connector.commit()
     pass
