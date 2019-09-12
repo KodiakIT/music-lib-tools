@@ -22,6 +22,7 @@ files_table_def =\
     (id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
     parent_inode INT,
+    size INT,
     is_audio BOOLEAN,
     FOREIGN KEY (parent_inode) references dirs(inode)
     )
@@ -39,12 +40,16 @@ metadata_table_def =\
     )
     '''
 
+audio_file_extension_regex = re.compile('.*\.(flac|wa?v|m4a|mp[34]|ogg|wma)$', re.IGNORECASE)
+
 def initialize_db(connector, cursor, wd):
     cursor.execute('PRAGMA foreign_keys = ON;')
     cursor.execute('PRAGMA journal_mode = WAL;')
     cursor.execute('CREATE TABLE IF NOT EXISTS %s' % dirs_table_def)
     cursor.execute('CREATE TABLE IF NOT EXISTS %s' % files_table_def)
-    cursor.execute('INSERT INTO dirs (inode, name) VALUES (?, ?)', (os.stat(wd).st_ino, wd))
+    cursor.execute('CREATE TABLE IF NOT EXISTS %s' % metadata_table_def)
+    cursor.execute('INSERT INTO dirs (inode, name) VALUES (?, ?)',
+                   (os.stat(wd).st_ino, os.path.abspath(wd)))
     connector.commit()
 
 def populate_dirs_table(connector, cursor, wd):
@@ -52,29 +57,26 @@ def populate_dirs_table(connector, cursor, wd):
         for dir in dirs:
             inode = os.stat(os.path.join(root, dir)).st_ino
             parent_inode = os.stat(root).st_ino
-            cursor.execute('INSERT INTO dirs(inode, name, parent_inode) VALUES (?, ?, ?)', (inode, dir, parent_inode))
-            connector.commit()
+            cursor.execute('''INSERT INTO dirs(inode, name, parent_inode)
+                            VALUES (?, ?, ?)''', (inode, dir, parent_inode))
+    connector.commit()
 
 def populate_files_table(connector, cursor, wd):
-    audio_regex = re.compile('.*\.(flac|wa?v|m4a|mp[34]|ogg|wma)$', re.IGNORECASE)
     for root, dirs, files in os.walk(wd):
         for file in files:
-            if re.match(audio_regex, file):
+            if re.match(audio_file_extension_regex, file):
                 is_audio = True
             else:
                 is_audio = False
             parent_inode = os.stat(root).st_ino
-            cursor.execute('INSERT INTO files (name, parent_inode, is_audio) VALUES (?, ?, ?)', (file, parent_inode, is_audio))
-            connector.commit()
-            if is_audio:
-                file_path = os.path.join(os.path.abspath(root), file)
-                ffprobe_command = ['ffprobe', '-v', 'error', '-select_streams', 'a:0',
-                                    '-show_format', '-show_streams', '-of', 'json=compact=1', file_path]
-                _subprocess = subprocess.run(ffprobe_command, capture_output=True)
-                metadata_json = _subprocess.stdout
+            cursor.execute('INSERT INTO files (name, parent_inode, size, is_audio) VALUES (?, ?, ?, ?)',
+                           (file, parent_inode, os.stat(os.path.join(root,file)).st_size, is_audio))
+    connector.commit()
+            # cursor.execute('WITH RECURISIVE filepath()')
 
-def populate_metadata_table():
-    pass
+def populate_metadata_table(connector, cursor, wd):
+    cursor.execute('INSERT INTO metadata(id) SELECT files.id FROM files WHERE (files.is_audio IS TRUE)')
+    connector.commit
 
 def main():
     cwd = os.getcwd()
@@ -87,7 +89,7 @@ def main():
     initialize_db(connector, cursor, '.')
     populate_dirs_table(connector, cursor, '.')
     populate_files_table(connector, cursor, '.')
+    populate_metadata_table(connector, cursor, '.')
 
 if __name__ == "__main__":
     main()
-    pass
