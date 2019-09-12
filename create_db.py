@@ -72,11 +72,16 @@ def populate_files_table(connector, cursor, wd):
             cursor.execute('INSERT INTO files (name, parent_inode, size, is_audio) VALUES (?, ?, ?, ?)',
                            (file, parent_inode, os.stat(os.path.join(root,file)).st_size, is_audio))
     connector.commit()
-            # cursor.execute('WITH RECURISIVE filepath()')
 
 def populate_metadata_table(connector, cursor, wd):
-    cursor.execute('INSERT INTO metadata(id) SELECT files.id FROM files WHERE (files.is_audio IS TRUE)')
-    connector.commit
+    cursor.execute('INSERT INTO metadata(id) SELECT files.id FROM files WHERE (files.is_audio=1)')
+    connector.commit()
+    # cursor.execute('WITH RECURISIVE filepath()')
+    # file_path = os.path.join(os.path.abspath(root), file)
+    # ffprobe_command = ['ffprobe', '-v', 'error', '-select_streams', 'a:0',
+    #                     '-show_format', '-show_streams', '-of', 'json=compact=1', file_path]
+    # _subprocess = subprocess.run(ffprobe_command, capture_output=True)
+    # ffprobe_json = _subprocess.stdout
 
 def main():
     cwd = os.getcwd()
