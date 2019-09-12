@@ -73,17 +73,20 @@ def populate_files_table(connector, cursor, wd):
                 _subprocess = subprocess.run(ffprobe_command, capture_output=True)
                 metadata_json = _subprocess.stdout
 
+def populate_metadata_table():
+    pass
+
 def main():
     cwd = os.getcwd()
     db_file = "music.sqlitedb"
-    db_file_path = cwd + "/" + db_file
+    db_file_path = os.path.join(cwd, db_file)
     if os.path.isfile(db_file_path):
         os.remove(db_file_path)
     connector = sqlite3.connect(db_file)
     cursor = connector.cursor()
-    initialize_db(connector,cursor,'.')
-    populate_dirs_table(connector,cursor,'.')
-    populate_files_table(connector,cursor,'.')
+    initialize_db(connector, cursor, '.')
+    populate_dirs_table(connector, cursor, '.')
+    populate_files_table(connector, cursor, '.')
 
 if __name__ == "__main__":
     main()
