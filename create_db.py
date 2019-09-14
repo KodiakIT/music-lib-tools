@@ -76,17 +76,21 @@ def populate_files_table(connector, cursor, wd):
 def populate_metadata_table(connector, cursor, wd):
     cursor.execute('INSERT INTO metadata(id) SELECT files.id FROM files WHERE (files.is_audio=1)')
     connector.commit()
-    # Get full path from DB
-    # selection = cursor.execute('''
-    #                 WITH RECURSIVE filepath(parent, name, dir_level) AS
-    #                 (SELECT files.parent_inode, files.name, 0 FROM FILES WHERE files.id = (?)
-    #                 UNION SELECT dirs.parent_inode, dirs.name, filepath.dir_level+1 FROM dirs, filepath WHERE inode=filepath.parent)
-    #                 SELECT filepath.name FROM filepath ORDER BY dir_level DESC''', file_id).fetchall()
-
-    # ffprobe_command = ['ffprobe', '-v', 'error', '-select_streams', 'a:0',
-    #                     '-show_format', '-show_streams', '-of', 'json=compact=1', file_path]
-    # _subprocess = subprocess.run(ffprobe_command, capture_output=True)
-    # ffprobe_json = _subprocess.stdout
+    audio_files_count = *(cursor.execute('''SELECT COUNT(id) FROM files WHERE files.is_audio IS TRUE''').fetchall())
+    # while audio_files_count > 0:
+    #     file_id = *(cursor.execute('''SELECT id FROM files WHERE files.is_audio IS TRUE''').fetchall())
+    # # Get full path from DB
+    #     selection = cursor.execute('''
+    #                     WITH RECURSIVE filepath(parent, name, dir_level) AS
+    #                     (SELECT files.parent_inode, files.name, 0 FROM FILES WHERE files.id = (?)
+    #                     UNION SELECT dirs.parent_inode, dirs.name, filepath.dir_level+1 FROM dirs, filepath WHERE inode=filepath.parent)
+    #                     SELECT filepath.name FROM filepath ORDER BY dir_level DESC''', file_id).fetchall()
+    #     file_path = os.path.join(*(s[0] for s in selection))
+    #     ffprobe_command = ['ffprobe', '-v', 'error', '-select_streams', 'a:0',
+    #                         '-show_format', '-show_streams', '-of', 'json=compact=1', file_path]
+    #     _subprocess = subprocess.run(ffprobe_command, capture_output=True)
+    #     ffprobe_json = _subprocess.stdout
+    #     # json.dump(ffprobe_json,)
 
 def main():
     cwd = os.getcwd()
