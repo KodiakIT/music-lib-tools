@@ -91,7 +91,7 @@ def populate_metadata_table(connector, cursor, wd):
         codec = ffprobe_json["streams"][0]["codec_name"]
         file_format = ffprobe_json["format"]["format_name"]
         cursor.execute('INSERT INTO metadata (id, codec, extension) VALUES (?, ?, ?)',
-                       (file_id, codec, file_format))
+                       (file_id[0], codec, file_format))
         audio_files_count_sql = cursor.execute(f'SELECT count(files.id) {empty_metadata_query}')
         audio_files_count = audio_files_count_sql.fetchall()[0]
         connector.commit()
