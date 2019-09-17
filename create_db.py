@@ -81,7 +81,7 @@ def populate_metadata_table(connector, cursor, wd):
     while audio_files_count[0] > 0:
         file_id = cursor.execute(f'SELECT metadata.id {empty_metadata_query} LIMIT 1').fetchall()
         # Get full path from DB
-        selection = cursor.execute(f'{recursive_file_path_query}', file_id)
+        selection = cursor.execute(f'{recursive_file_path_query}', file_id[0])
         file_path = os.path.join(*(s[0] for s in selection))
         ffprobe_command = ['ffprobe', '-v', 'error', '-select_streams', 'a:0',
                            '-show_format', '-show_streams', '-of', 'json=compact=1', file_path]
