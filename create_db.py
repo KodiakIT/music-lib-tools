@@ -29,25 +29,22 @@ files_table_def =\
     '''
 
 metadata_table_def =\
-    '''
-    metadata
-    (id INTEGER,
-    extension TEXT,
-    codec TEXT,
-    bit_rate INT,
-    converted BOOLEAN,
-    FOREIGN KEY (id) references files(id)
-    )
-    '''
+    ('id INTEGER',
+     'extension TEXT',
+     'codec TEXT',
+     'bit_rate INT',
+     'converted BOOLEAN',
+     'FOREIGN KEY (id) references files(id)'
+     )
 
 audio_file_extension_regex = re.compile('.*\.(flac|wa?v|m4a|mp[34]|ogg|wma)$', re.IGNORECASE)
 
 def initialize_db(connector, cursor, wd):
     cursor.execute('PRAGMA foreign_keys = ON;')
     cursor.execute('PRAGMA journal_mode = WAL;')
-    cursor.execute('CREATE TABLE IF NOT EXISTS %s' % dirs_table_def)
-    cursor.execute('CREATE TABLE IF NOT EXISTS %s' % files_table_def)
-    cursor.execute('CREATE TABLE IF NOT EXISTS %s' % metadata_table_def)
+    cursor.execute(f'CREATE TABLE IF NOT EXISTS {dirs_table_def}')
+    cursor.execute(f'CREATE TABLE IF NOT EXISTS {files_table_def}')
+    cursor.execute('CREATE TABLE IF NOT EXISTS ? (?)','metadata',*metadata_table_def)
     cursor.execute('INSERT INTO dirs (inode, name) VALUES (?, ?)',
                    (os.stat(wd).st_ino, os.path.abspath(wd)))
     connector.commit()
@@ -73,24 +70,29 @@ def populate_files_table(connector, cursor, wd):
                            (file, parent_inode, os.stat(os.path.join(root,file)).st_size, is_audio))
     connector.commit()
 
+
 def populate_metadata_table(connector, cursor, wd):
     cursor.execute('INSERT INTO metadata(id) SELECT files.id FROM files WHERE (files.is_audio=1)')
     connector.commit()
-    audio_files_count = *(cursor.execute('''SELECT COUNT(id) FROM files WHERE files.is_audio IS TRUE''').fetchall())
-    # while audio_files_count > 0:
-    #     file_id = *(cursor.execute('''SELECT id FROM files WHERE files.is_audio IS TRUE''').fetchall())
-    # # Get full path from DB
-    #     selection = cursor.execute('''
-    #                     WITH RECURSIVE filepath(parent, name, dir_level) AS
-    #                     (SELECT files.parent_inode, files.name, 0 FROM FILES WHERE files.id = (?)
-    #                     UNION SELECT dirs.parent_inode, dirs.name, filepath.dir_level+1 FROM dirs, filepath WHERE inode=filepath.parent)
-    #                     SELECT filepath.name FROM filepath ORDER BY dir_level DESC''', file_id).fetchall()
-    #     file_path = os.path.join(*(s[0] for s in selection))
-    #     ffprobe_command = ['ffprobe', '-v', 'error', '-select_streams', 'a:0',
-    #                         '-show_format', '-show_streams', '-of', 'json=compact=1', file_path]
-    #     _subprocess = subprocess.run(ffprobe_command, capture_output=True)
-    #     ffprobe_json = _subprocess.stdout
-    #     # json.dump(ffprobe_json,)
+    audio_files_count = (cursor.execute('SELECT COUNT(files.id) FROM files WHERE files.is_audio IS TRUE').fetchall())
+    print(*audio_files_count[0])
+    while audio_files_count[0][0] > 0:
+        file_id = (cursor.execute('SELECT id FROM files WHERE files.is_audio IS TRUE').fetchall())[0]
+        # Get full path from DB
+        selection = cursor.execute('''
+                        WITH RECURSIVE filepath(parent, name, dir_level) AS
+                        (SELECT files.parent_inode, files.name, 0 FROM FILES WHERE files.id = (?)
+                        UNION SELECT dirs.parent_inode, dirs.name, filepath.dir_level+1 FROM dirs, filepath WHERE inode=filepath.parent)
+                        SELECT filepath.name FROM filepath ORDER BY dir_level DESC''', file_id).fetchall()
+        file_path = os.path.join(*(s[0] for s in selection))
+        ffprobe_command = ['ffprobe', '-v', 'error', '-select_streams', 'a:0',
+                           '-show_format', '-show_streams', '-of', 'json=compact=1', file_path]
+        ffprobe_stdout = subprocess.run(ffprobe_command, capture_output=True).stdout
+        ffprobe_json = json.loads(ffprobe_stdout)
+        codec = ffprobe_json["streams"][0]["codec"]
+        cursor.execute('INSERT INTO metadata (id, codec) VALUES (? ?)', file_id, codec)
+        audio_files_count = (cursor.execute('SELECT count(files.id) FROM files INNER JOIN metadata ON files.id = metadata.id WHERE files.is_audio IS TRUE and codec IS NULL').fetchall())[0]
+
 
 def main():
     cwd = os.getcwd()
