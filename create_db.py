@@ -58,4 +58,10 @@ class Audio_Metadata_Table_Row(SQLiteDB):
 
 Music_Database = SQLiteDB('music.sqlitedb')
 
-# TODO: Implement walk(getcwd) to iterate through files and populate Dirs, then Files, then Metadata, possibly the latter two concurrently?
+def main():
+    # TODO: Implement walk(getcwd) to iterate through dirs and populate Dirs table
+    # TODO: Implement walk(getcwd) to iterate through files and populate Files & Metadata tables, possibly concurrently?
+    pass
+
+if __name__ == "__main__":
+    main()
