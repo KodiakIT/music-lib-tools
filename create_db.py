@@ -6,40 +6,27 @@ import re
 import subprocess
 import json
 
-dirs_table_def =\
-    '''
-    dirs
+dirs_table_def = '''dirs
     (inode INTEGER PRIMARY KEY,
     name TEXT,
     parent_inode INT,
-    FOREIGN KEY (parent_inode) references dirs(inode)
-    )
-    '''
+    FOREIGN KEY (parent_inode) references dirs(inode))'''
 
-files_table_def =\
-    '''
-    files
+files_table_def = ''' files
     (id INTEGER PRIMARY KEY,
     name TEXT,
     parent_inode INT,
     size INT,
     is_audio BOOLEAN,
-    FOREIGN KEY (parent_inode) references dirs(inode)
-    )
-    '''
+    FOREIGN KEY (parent_inode) references dirs(inode))'''
 
-metadata_table_def =\
-    '''
-    metadata
-    (
-    id INTEGER,
+metadata_table_def = '''metadata
+    (id INTEGER,
     extension TEXT,
     codec TEXT,
     bit_rate INT,
     converted BOOLEAN,
-    FOREIGN KEY (id) references files(id)
-    )
-    '''
+    FOREIGN KEY (id) references files(id))'''
 
 audio_file_extension_regex = re.compile('.*\.(flac|wa?v|m4a|mp[34]|ogg|wma)$', re.IGNORECASE)
 
@@ -90,7 +77,7 @@ def populate_metadata_table(connector, cursor, wd):
     audio_files_count = (cursor.execute(f'SELECT COUNT(*) {empty_metadata_query}').fetchall())[0] #??
 
     print(audio_files_count)
-    
+
     while audio_files_count[0] > 0:
         file_id = cursor.execute(f'SELECT metadata.id {empty_metadata_query} LIMIT 1').fetchall()
         # Get full path from DB
