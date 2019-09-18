@@ -10,14 +10,15 @@ import sqlalchemy.types as a_types
 import sqlalchemy.ext as alch_ext
 import sqlalchemy.engine as a_ngin
 from sqlalchemy import Column as Col
-from sqlalchemy.ext.declarative import declarative_base as alch_base
+from sqlalchemy.ext.declarative import declarative_base
 import acoustid
 
+Base = declarative_base()
 
 class SQLiteDB(object):
     file_path = None
     could_not_connect_error='Could not connect to named database: '
-    Engine = alch.engine.Engine
+    self.Engine = alch.engine.Engine
     
 
     def __init__(self):
@@ -37,7 +38,7 @@ class SQLiteDB(object):
         except:
             print(f'{could_not_connect_error}{db_name} in the working directory: {working_dir}')
 
-class Dirs_Table_Row(alch_base.__class__):
+class Dirs_Table_Row(Base):
     __tablename__ = 'dirs'
     def __init__(self, database):
         pass
@@ -48,7 +49,7 @@ class Dirs_Table_Row(alch_base.__class__):
     recursive_child_count = Col(a_types.Integer)
 
 
-class Files_Table_Row(alch_base.__class__):
+class Files_Table_Row(Base):
     __tablename__ = 'files'
     def __init__(self, database):
         pass
@@ -59,7 +60,7 @@ class Files_Table_Row(alch_base.__class__):
     is_audio = Col(alch.Boolean)
 
 
-class Audio_Metadata_Table_Row(alch_base.__class__):
+class Audio_Metadata_Table_Row(Base):
     __tablename__ = 'audio_metadata'
     def __init__(self, database):
         pass
