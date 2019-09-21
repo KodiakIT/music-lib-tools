@@ -18,25 +18,30 @@ Base = declarative_base()
 class SQLiteDB(object):
     file_path = None
     could_not_connect_error='Could not connect to named database: '
-    self.Engine = alch.engine.Engine
+    engine = None
     
-
-    def __init__(self):
-        engine = a_ngin.create_engine('sqlite:///:memory:', echo=True)
-
     def __init__(self, db_name):
+        # 2 args
+        # try:
+        #     file_path = path.join(working_dir, db_name)
+        #     self.engine = a_ngin.create_engine(f'sqlite://{file_path}', echo=True)
+        #     self.engine.connect()
+        # except:
+        #     print(f'{self.could_not_connect_error}{db_name} in the working directory: {working_dir}')    
+    
+        #db_name = args[0]
+        # working_directory = args[1]
         try:
             file_path = path.join(getcwd(), db_name)
-            engine = a_ngin.create_engine(f'sqlite://{file_path}', echo=True)
+            self.engine = a_ngin.create_engine(f'sqlite://{file_path}', echo=True)
+            self.engine.connect()
         except:
-            print(f'{could_not_connect_error}{db_name} in the current working directory: {getcwd()}')
-
-    def __init__(self, db_name, working_dir):
-        try:
-            file_path = path.join(working_dir, db_name)
-            engine = a_ngin.create_engine(f'sqlite://{file_path}', echo=True)
-        except:
-            print(f'{could_not_connect_error}{db_name} in the working directory: {working_dir}')
+            print(f'{self.could_not_connect_error}{db_name} in the current working directory: {getcwd()}')
+    
+        # No args
+        # self.engine = a_ngin.create_engine('sqlite:///:memory:', echo=True)
+        # print('Warning: working in memory-only DB')
+        # self.engine.connect()
 
 class Dirs_Table_Row(Base):
     __tablename__ = 'dirs'
@@ -60,24 +65,25 @@ class Files_Table_Row(Base):
     is_audio = Col(alch.Boolean)
 
 
-class Audio_Metadata_Table_Row(Base):
-    __tablename__ = 'audio_metadata'
-    def __init__(self, database):
-        pass
-    id = Col(a_types.Integer, alch.ForeignKey(Files_Table_Row.id))
-    codec = Col(a_types.String)
-    bit_rate = Col(a_types.Integer)
-    title = Col(a_types.String)
-    artist = Col(a_types.String)
-    album = Col(a_types.String)
-    date = Col(a_types.String)
-    duration = Col(a_types.Float)
-    genre = Col(a_types.String)
-    acoustid = Col(a_types.String)
-    json = Col(a_types.LargeBinary)
+# class Audio_Metadata_Table_Row(Base):
+#     __tablename__ = 'audio_metadata'
+#     def __init__(self, database):
+#         pass
+#     id = Col(a_types.Integer, alch.ForeignKey(Files_Table_Row.id))
+#     codec = Col(a_types.String)
+#     bit_rate = Col(a_types.Integer)
+#     title = Col(a_types.String)
+#     artist = Col(a_types.String)
+#     album = Col(a_types.String)
+#     date = Col(a_types.String)
+#     duration = Col(a_types.Float)
+#     genre = Col(a_types.String)
+#     acoustid = Col(a_types.String)
+#     json = Col(a_types.LargeBinary)
 
 def main():
     Music_Database = SQLiteDB('music.sqlitedb')
+    Base.metadata.create_all(SQLiteDB.engine)
 
     # TODO: Implement walk(getcwd) to iterate through dirs and populate Dirs table
     for (root, dirs, files) in walk(getcwd()):
@@ -90,7 +96,7 @@ def main():
         dir_inode = stat(root).st_ino
         dir_name = path.basename(root)
         print(f'{dir_inode}, {direct_subdirs_count}, {dir_name}')
-        
+
 
     # TODO: Implement walk(getcwd) to iterate through files and populate Files & Metadata tables, possibly concurrently?
 
