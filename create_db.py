@@ -65,21 +65,21 @@ class Files_Table_Row(Base):
     is_audio = Col(alch.Boolean)
 
 
-# class Audio_Metadata_Table_Row(Base):
-#     __tablename__ = 'audio_metadata'
-#     def __init__(self, database):
-#         pass
-#     id = Col(a_types.Integer, alch.ForeignKey(Files_Table_Row.id))
-#     codec = Col(a_types.String)
-#     bit_rate = Col(a_types.Integer)
-#     title = Col(a_types.String)
-#     artist = Col(a_types.String)
-#     album = Col(a_types.String)
-#     date = Col(a_types.String)
-#     duration = Col(a_types.Float)
-#     genre = Col(a_types.String)
-#     acoustid = Col(a_types.String)
-#     json = Col(a_types.LargeBinary)
+class Audio_Metadata_Table_Row(Base):
+    __tablename__ = 'audio_metadata'
+    def __init__(self, database):
+        pass
+    id = Col(a_types.Integer, alch.ForeignKey(Files_Table_Row.id), primary_key=True)
+    codec = Col(a_types.String)
+    bit_rate = Col(a_types.Integer)
+    title = Col(a_types.String)
+    artist = Col(a_types.String)
+    album = Col(a_types.String)
+    date = Col(a_types.String)
+    duration = Col(a_types.Float)
+    genre = Col(a_types.String)
+    acoustid = Col(a_types.String)
+    json = Col(a_types.LargeBinary)
 
 def main():
     Music_Database = SQLiteDB('music.sqlitedb')
