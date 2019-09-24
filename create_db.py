@@ -1,15 +1,11 @@
 #!/bin/env python3
 
 import sqlalchemy as alch
-from os import path
-from os import stat
-from os import sep
-from os import walk
-from os import getcwd
+from os import path, getcwd, walk, sep, stat
 import sqlalchemy.types as a_types
-import sqlalchemy.ext as alch_ext
-import sqlalchemy.engine as a_ngin
-from sqlalchemy import Column as Col
+import sqlalchemy.ext as a_ext
+import sqlalchemy.engine as a_engine
+from sqlalchemy import Column, Table
 from sqlalchemy.ext.declarative import declarative_base
 import acoustid
 
@@ -24,7 +20,7 @@ class SQLiteDB(object):
         # 2 args
         # try:
         #     file_path = path.join(working_dir, db_name)
-        #     self.engine = a_ngin.create_engine(f'sqlite://{file_path}', echo=True)
+        #     self.engine = a_engine.create_engine(f'sqlite://{file_path}', echo=True)
         #     self.engine.connect()
         # except:
         #     print(f'{self.could_not_connect_error}{db_name} in the working directory: {working_dir}')    
@@ -33,57 +29,59 @@ class SQLiteDB(object):
         # working_directory = args[1]
         try:
             file_path = path.join(getcwd(), db_name)
-            self.engine = a_ngin.create_engine(f'sqlite://{file_path}', echo=True)
-            self.engine.connect()
+            print(file_path)
+            engine = a_engine.create_engine(f'sqlite://{file_path}')
+            engine.connect()
         except:
             print(f'{self.could_not_connect_error}{db_name} in the current working directory: {getcwd()}')
     
         # No args
-        # self.engine = a_ngin.create_engine('sqlite:///:memory:', echo=True)
+        # self.engine = a_engine.create_engine('sqlite:///:memory:', echo=True)
         # print('Warning: working in memory-only DB')
         # self.engine.connect()
+    #engine.echo = True
 
 class Dirs_Table_Row(Base):
     __tablename__ = 'dirs'
     def __init__(self, database):
         pass
-    inode = Col(a_types.Integer, primary_key=True)
-    dir_nam = Col(a_types.String)
+    inode = Column(a_types.Integer, primary_key=True)
+    dir_nam = Column(a_types.String)
     parent_inode = alch.Column(a_types.Integer, alch.ForeignKey("Dirs_Table_Row.inode"))
-    direct_child_count = Col(a_types.Integer)
-    recursive_child_count = Col(a_types.Integer)
+    direct_child_count = Column(a_types.Integer)
+    recursive_child_count = Column(a_types.Integer)
 
 
 class Files_Table_Row(Base):
     __tablename__ = 'files'
     def __init__(self, database):
         pass
-    id = Col(a_types.Integer, primary_key=True)
-    dir_nam = Col(a_types.String)
-    parent_inode = Col(a_types.Integer, alch.ForeignKey(Dirs_Table_Row.inode))
-    size = Col(a_types.Integer)
-    is_audio = Col(alch.Boolean)
+    id = Column(a_types.Integer, primary_key=True)
+    dir_nam = Column(a_types.String)
+    parent_inode = Column(a_types.Integer, alch.ForeignKey(Dirs_Table_Row.inode))
+    size = Column(a_types.Integer)
+    is_audio = Column(alch.Boolean)
 
 
 class Audio_Metadata_Table_Row(Base):
     __tablename__ = 'audio_metadata'
     def __init__(self, database):
         pass
-    id = Col(a_types.Integer, alch.ForeignKey(Files_Table_Row.id), primary_key=True)
-    codec = Col(a_types.String)
-    bit_rate = Col(a_types.Integer)
-    title = Col(a_types.String)
-    artist = Col(a_types.String)
-    album = Col(a_types.String)
-    date = Col(a_types.String)
-    duration = Col(a_types.Float)
-    genre = Col(a_types.String)
-    acoustid = Col(a_types.String)
-    json = Col(a_types.LargeBinary)
+    id = Column(a_types.Integer, alch.ForeignKey(Files_Table_Row.id), primary_key=True)
+    codec = Column(a_types.String)
+    bit_rate = Column(a_types.Integer)
+    title = Column(a_types.String)
+    artist = Column(a_types.String)
+    album = Column(a_types.String)
+    date = Column(a_types.String)
+    duration = Column(a_types.Float)
+    genre = Column(a_types.String)
+    acoustid = Column(a_types.String)
+    json = Column(a_types.LargeBinary)
 
 def main():
     Music_Database = SQLiteDB('music.sqlitedb')
-    Base.metadata.create_all(SQLiteDB.engine)
+    declarative_base().metadata.create_all(SQLiteDB.engine)
 
     # TODO: Implement walk(getcwd) to iterate through dirs and populate Dirs table
     for (root, dirs, files) in walk(getcwd()):
