@@ -1,21 +1,21 @@
 #!/bin/env python3
 
+from os import path, getcwd, walk, stat
+
 import sqlalchemy as alch
-from os import path, getcwd, walk, sep, stat
-import sqlalchemy.types as a_types
-import sqlalchemy.ext as a_ext
 import sqlalchemy.engine as a_engine
-from sqlalchemy import Column, Table
+import sqlalchemy.types as a_types
+from sqlalchemy import Column
 from sqlalchemy.ext.declarative import declarative_base
-import acoustid
 
 Base = declarative_base()
 
+
 class SQLiteDB(object):
     file_path = None
-    could_not_connect_error='Could not connect to named database: '
+    could_not_connect_error = 'Could not connect to named database: '
     engine = None
-    
+
     def __init__(self, db_name):
         # 2 args
         # try:
@@ -24,27 +24,28 @@ class SQLiteDB(object):
         #     self.engine.connect()
         # except:
         #     print(f'{self.could_not_connect_error}{db_name} in the working directory: {working_dir}')    
-    
-        #db_name = args[0]
+
+        # db_name = args[0]
         # working_directory = args[1]
         try:
-            file_path = path.join(getcwd(), db_name)
-            print(file_path)
-            engine = a_engine.create_engine(f'sqlite://{file_path}')
+            engine = a_engine.create_engine(f'sqlite:///{db_name}')
             engine.connect()
         except:
             print(f'{self.could_not_connect_error}{db_name} in the current working directory: {getcwd()}')
-    
+
         # No args
         # self.engine = a_engine.create_engine('sqlite:///:memory:', echo=True)
         # print('Warning: working in memory-only DB')
         # self.engine.connect()
-    #engine.echo = True
+    # engine.echo = True
+
 
 class Dirs_Table_Row(Base):
     __tablename__ = 'dirs'
+
     def __init__(self, database):
         pass
+
     inode = Column(a_types.Integer, primary_key=True)
     dir_nam = Column(a_types.String)
     parent_inode = alch.Column(a_types.Integer, alch.ForeignKey("Dirs_Table_Row.inode"))
@@ -54,8 +55,10 @@ class Dirs_Table_Row(Base):
 
 class Files_Table_Row(Base):
     __tablename__ = 'files'
+
     def __init__(self, database):
         pass
+
     id = Column(a_types.Integer, primary_key=True)
     dir_nam = Column(a_types.String)
     parent_inode = Column(a_types.Integer, alch.ForeignKey(Dirs_Table_Row.inode))
@@ -65,8 +68,10 @@ class Files_Table_Row(Base):
 
 class Audio_Metadata_Table_Row(Base):
     __tablename__ = 'audio_metadata'
+
     def __init__(self, database):
         pass
+
     id = Column(a_types.Integer, alch.ForeignKey(Files_Table_Row.id), primary_key=True)
     codec = Column(a_types.String)
     bit_rate = Column(a_types.Integer)
@@ -79,24 +84,25 @@ class Audio_Metadata_Table_Row(Base):
     acoustid = Column(a_types.String)
     json = Column(a_types.LargeBinary)
 
-def main():
-    Music_Database = SQLiteDB('music.sqlitedb')
-    declarative_base().metadata.create_all(SQLiteDB.engine)
 
+def main():
+    Music_Database = SQLiteDB('music.db')
+    print(Music_Database)
+    Base = declarative_base()
     # TODO: Implement walk(getcwd) to iterate through dirs and populate Dirs table
     for (root, dirs, files) in walk(getcwd()):
         direct_subdirs_count = 0
-        excluded_subdirectories = ("Album Artwork","iTunes")
-        #dirs[:] = [_ for _ in dirs if  ] ###  TODO: maxdepth=1?
+        excluded_subdirectories = ("Album Artwork", "iTunes")
+        # dirs[:] = [_ for _ in dirs if  ] ###  TODO: maxdepth=1?
         dirs[:] = [_ for _ in dirs if _ not in excluded_subdirectories]
         for dir in dirs:
-            direct_subdirs_count+=1
+            direct_subdirs_count += 1
         dir_inode = stat(root).st_ino
         dir_name = path.basename(root)
         print(f'{dir_inode}, {direct_subdirs_count}, {dir_name}')
 
-
     # TODO: Implement walk(getcwd) to iterate through files and populate Files & Metadata tables, possibly concurrently?
+
 
 if __name__ == "__main__":
     main()
